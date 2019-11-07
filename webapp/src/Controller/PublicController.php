@@ -60,64 +60,8 @@ class PublicController extends BaseController
      */
     public function scoreboardAction(Request $request)
     {
-        $response   = new Response();
-        $static     = $request->query->getBoolean('static');
-        $refreshUrl = $this->generateUrl('public_index');
-        // Determine contest to use
-        $contest = $this->dj->getCurrentContest(-1);
-
-        if ($static) {
-            $refreshParams = [
-                'static' => 1,
-            ];
-            // For static scoreboards, allow to pass a contest= param
-            if ($contestId = $request->query->get('contest')) {
-                if ($contestId === 'auto') {
-                    // Automatically detect the contest that is activated the latest
-                    $contest      = null;
-                    $activateTime = null;
-                    foreach ($this->dj->getCurrentContests(-1) as $possibleContest) {
-                        if (!$possibleContest->getPublic() || !$possibleContest->getEnabled()) {
-                            continue;
-                        }
-                        if ($activateTime === null || $activateTime < $possibleContest->getActivatetime()) {
-                            $activateTime = $possibleContest->getActivatetime();
-                            $contest      = $possibleContest;
-                        }
-                    }
-                } else {
-                    // Find the contest with the given ID
-                    $contest = null;
-                    foreach ($this->dj->getCurrentContests(-1) as $possibleContest) {
-                        if ($possibleContest->getCid() == $contestId || $possibleContest->getExternalid() == $contestId) {
-                            $contest = $possibleContest;
-                            break;
-                        }
-                    }
-
-                    if ($contest) {
-                        $refreshParams['contest'] = $contest->getCid();
-                    } else {
-                        throw new NotFoundHttpException('Specified contest not found');
-                    }
-                }
-            }
-
-            $refreshUrl = sprintf('?%s', http_build_query($refreshParams));
-        }
-
-        $data = $this->scoreboardService->getScoreboardTwigData($request, $response, $refreshUrl, false, true, $static,
-                                                                $contest);
-
-        if ($static) {
-            $data['hide_menu'] = true;
-        }
-
-        if ($request->isXmlHttpRequest()) {
-            $data['current_contest'] = $contest;
-            return $this->render('partials/scoreboard.html.twig', $data, $response);
-        }
-        return $this->render('public/scoreboard.html.twig', $data, $response);
+        // Disable the public scoreboard and always require people to login
+        return $this->redirectToRoute('login');
     }
 
     /**
